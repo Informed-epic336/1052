@@ -41,6 +41,13 @@ class SettingsUpdate(BaseModel):
     feishu_encrypt_key: Optional[str] = None
     feishu_verification_token: Optional[str] = None
     feishu_chat_id: Optional[str] = None
+    acp_enabled: Optional[bool] = None
+    acp_data_path: Optional[str] = None
+    acp_seed_password: Optional[str] = None
+    acp_access_point: Optional[str] = None
+    acp_agent_name: Optional[str] = None
+    acp_aid: Optional[str] = None
+    acp_debug: Optional[bool] = None
 
 class SettingsResponse(BaseModel):
     model_config = ConfigDict(protected_namespaces=())
@@ -60,6 +67,13 @@ class SettingsResponse(BaseModel):
     feishu_encrypt_key: str
     feishu_verification_token: str
     feishu_chat_id: str
+    acp_enabled: bool = False
+    acp_data_path: str = ""
+    acp_seed_password: str = ""
+    acp_access_point: str = "agentid.pub"
+    acp_agent_name: str = ""
+    acp_aid: str = ""
+    acp_debug: bool = False
 
 class NativeCommandRequest(BaseModel):
     command: str

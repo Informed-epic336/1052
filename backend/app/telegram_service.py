@@ -1,11 +1,25 @@
 import httpx
 import logging
+import os
 from typing import Optional
 
 from app.config import load_settings
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+def get_proxy_url() -> Optional[str]:
+    http_proxy = os.environ.get("HTTP_PROXY") or os.environ.get("http_proxy")
+    https_proxy = os.environ.get("HTTPS_PROXY") or os.environ.get("https_proxy")
+    return https_proxy or http_proxy
+
+def create_async_client(**kwargs) -> httpx.AsyncClient:
+    if "trust_env" not in kwargs:
+        kwargs["trust_env"] = True
+    proxy_url = get_proxy_url()
+    if proxy_url:
+        kwargs["proxy"] = proxy_url
+    return httpx.AsyncClient(**kwargs)
 
 async def send_telegram_message(message: str) -> dict:
     settings = load_settings()
@@ -28,7 +42,7 @@ async def send_telegram_message(message: str) -> dict:
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     
     try:
-        async with httpx.AsyncClient() as client:
+        async with create_async_client() as client:
             response = await client.post(
                 url,
                 json={
@@ -83,7 +97,7 @@ async def send_telegram_photo(photo_url: str, caption: Optional[str] = None) -> 
     url = f"https://api.telegram.org/bot{token}/sendPhoto"
     
     try:
-        async with httpx.AsyncClient() as client:
+        async with create_async_client() as client:
             data = {
                 "chat_id": chat_id,
                 "photo": photo_url

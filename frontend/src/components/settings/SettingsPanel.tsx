@@ -13,7 +13,8 @@ import {
   Save,
   Search,
   Database,
-  MessageCircle
+  MessageCircle,
+  Network
 } from 'lucide-react';
 
 interface Settings {
@@ -39,6 +40,13 @@ interface Settings {
   feishuEncryptKey: string;
   feishuVerificationToken: string;
   feishuChatId: string;
+  acpEnabled: boolean;
+  acpDataPath: string;
+  acpSeedPassword: string;
+  acpAccessPoint: string;
+  acpAgentName: string;
+  acpAid: string;
+  acpDebug: boolean;
 }
 
 interface SettingsPanelProps {
@@ -51,6 +59,7 @@ interface SettingsPanelProps {
 type SettingsTab = 
   | 'api' 
   | 'social'
+  | 'acp'
   | 'websearch' 
   | 'skill' 
   | 'mcp' 
@@ -62,6 +71,7 @@ type SettingsTab =
 const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
   { id: 'api', label: 'API 密钥', icon: <Key style={{ width: '16px', height: '16px' }} /> },
   { id: 'social', label: '社交能力', icon: <MessageCircle style={{ width: '16px', height: '16px' }} /> },
+  { id: 'acp', label: 'ACP 通信', icon: <Network style={{ width: '16px', height: '16px' }} /> },
   { id: 'websearch', label: '联网搜索', icon: <Globe style={{ width: '16px', height: '16px' }} /> },
   { id: 'skill', label: 'SKILL', icon: <Zap style={{ width: '16px', height: '16px' }} /> },
   { id: 'mcp', label: 'MCP', icon: <Cpu style={{ width: '16px', height: '16px' }} /> },
@@ -426,6 +436,137 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                         <p>5. 发布应用并添加到群聊或单聊</p>
                       </div>
                     </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'acp' && (
+              <div>
+                <h2 style={{ fontSize: '20px', fontWeight: 600, color: '#d49a2e', marginBottom: '24px' }}>ACP 通信协议</h2>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ padding: '16px', backgroundColor: '#141414', borderRadius: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <Network style={{ width: '24px', height: '24px', color: '#d49a2e' }} />
+                        <span style={{ fontSize: '16px', fontWeight: 500, color: '#e7e7e7' }}>启用 ACP</span>
+                      </div>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '4px 10px',
+                        borderRadius: '12px',
+                        backgroundColor: localSettings.acpEnabled ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                        fontSize: '12px',
+                        color: localSettings.acpEnabled ? '#22c55e' : '#ef4444'
+                      }}>
+                        <div style={{
+                          width: '6px',
+                          height: '6px',
+                          borderRadius: '50%',
+                          backgroundColor: localSettings.acpEnabled ? '#22c55e' : '#ef4444'
+                        }} />
+                        {localSettings.acpEnabled ? '已启用' : '未启用'}
+                      </div>
+                    </div>
+                    {renderToggle(localSettings.acpEnabled, (v) => updateSetting('acpEnabled', v))}
+                  </div>
+
+                  <div style={{ padding: '16px', backgroundColor: '#141414', borderRadius: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                      <span style={{ fontSize: '16px', fontWeight: 500, color: '#e7e7e7' }}>基本配置</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div>
+                        <label style={labelStyle}>接入点 (Access Point)</label>
+                        <select
+                          value={localSettings.acpAccessPoint}
+                          onChange={(e) => updateSetting('acpAccessPoint', e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '8px 12px',
+                            backgroundColor: '#1a1a1a',
+                            border: '1px solid #2a2a2a',
+                            borderRadius: '6px',
+                            color: '#e7e7e7',
+                            fontSize: '14px',
+                            outline: 'none',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <option value="agentid.pub">agentid.pub</option>
+                          <option value="agencp.io">agencp.io</option>
+                        </select>
+                        <p style={{ fontSize: '12px', color: '#666666', marginTop: '4px' }}>选择 ACP 网络接入点</p>
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Agent 名称</label>
+                        <input
+                          type="text"
+                          value={localSettings.acpAgentName}
+                          onChange={(e) => updateSetting('acpAgentName', e.target.value)}
+                          placeholder="myagent"
+                          style={inputStyle}
+                        />
+                        <p style={{ fontSize: '12px', color: '#666666', marginTop: '4px' }}>用于创建新的 Agent 身份</p>
+                      </div>
+                      <div>
+                        <label style={labelStyle}>已有 AID (可选)</label>
+                        <input
+                          type="text"
+                          value={localSettings.acpAid}
+                          onChange={(e) => updateSetting('acpAid', e.target.value)}
+                          placeholder="myagent.agentunion.cn"
+                          style={inputStyle}
+                        />
+                        <p style={{ fontSize: '12px', color: '#666666', marginTop: '4px' }}>如果已有 AID，填写此项将直接加载</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '16px', backgroundColor: '#141414', borderRadius: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                      <span style={{ fontSize: '16px', fontWeight: 500, color: '#e7e7e7' }}>高级配置</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div>
+                        <label style={labelStyle}>数据存储路径 (可选)</label>
+                        <input
+                          type="text"
+                          value={localSettings.acpDataPath}
+                          onChange={(e) => updateSetting('acpDataPath', e.target.value)}
+                          placeholder="留空使用默认路径"
+                          style={inputStyle}
+                        />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>加密种子密码</label>
+                        <input
+                          type="password"
+                          value={localSettings.acpSeedPassword}
+                          onChange={(e) => updateSetting('acpSeedPassword', e.target.value)}
+                          placeholder="用于私钥加密"
+                          style={inputStyle}
+                        />
+                      </div>
+                      <div style={{ ...cardStyle, backgroundColor: '#1a1a1a' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <span style={{ fontSize: '14px', color: '#e7e7e7' }}>调试模式</span>
+                        </div>
+                        {renderToggle(localSettings.acpDebug, (v) => updateSetting('acpDebug', v))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '12px', backgroundColor: 'rgba(212, 154, 46, 0.1)', borderRadius: '8px', border: '1px solid rgba(212, 154, 46, 0.2)' }}>
+                    <p style={{ fontSize: '12px', color: '#d49a2e', margin: 0, marginBottom: '8px' }}>
+                      💡 ACP (智能体通信协议) 说明：
+                    </p>
+                    <p style={{ fontSize: '12px', color: '#888888', margin: 0, lineHeight: '1.6' }}>
+                      ACP 是一个开放协议，用于解决 Agent 互相通信协作的问题。启用后，您的 Agent 可以与其他 Agent 进行安全通信。
+                      访问 <a href="https://agentunion.cn" target="_blank" rel="noopener noreferrer" style={{ color: '#d49a2e' }}>agentunion.cn</a> 了解更多。
+                    </p>
                   </div>
                 </div>
               </div>

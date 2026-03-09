@@ -8,9 +8,10 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-green.svg)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-18+-61DAFB.svg)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5+-3178C6.svg)](https://www.typescriptlang.org/)
+[![ACP](https://img.shields.io/badge/ACP-0.1.99-orange.svg)](https://agentid.pub)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-[功能特性](#-功能特性) • [快速开始](#-快速开始) • [详细配置](#-详细配置) • [API文档](#-api-文档) • [架构设计](#-架构设计)
+[功能特性](#-功能特性) • [快速开始](#-快速开始) • [ACP通信协议](#-acp-通信协议) • [详细配置](#-详细配置) • [API文档](#-api-文档)
 
 <a href="https://github.com/1052666/1052">
   <img src="https://img.shields.io/github/stars/1052666/1052?style=social" alt="GitHub stars">
@@ -26,17 +27,16 @@
 - [功能特性](#-功能特性)
 - [技术栈](#-技术栈)
 - [快速开始](#-快速开始)
+- [ACP 通信协议](#-acp-通信协议)
+  - [什么是 ACP](#什么是-acp)
+  - [核心概念](#核心概念)
+  - [ACP 架构](#acp-架构)
+  - [本项目中的 ACP 集成](#本项目中的-acp-集成)
+  - [ACP 配置指南](#acp-配置指南)
+  - [ACP API 接口](#acp-api-接口)
+  - [ACP 使用示例](#acp-使用示例)
 - [详细配置](#-详细配置)
 - [核心功能详解](#-核心功能详解)
-  - [💰 赚钱模式](#-赚钱模式)
-  - [🧬 自我进化机制](#-自我进化机制)
-  - [🔄 上下文管理](#-上下文管理)
-  - [🤝 Agent 通信](#-agent-通信)
-  - [📝 记忆系统](#-记忆系统)
-  - [📚 技能系统](#-技能系统)
-  - [⏰ 定时任务](#-定时任务)
-  - [📖 日记系统](#-日记系统)
-  - [💬 社交平台集成](#-社交平台集成)
 - [API 文档](#-api-文档)
 - [架构设计](#-架构设计)
 - [项目结构](#-项目结构)
@@ -57,9 +57,10 @@
 - 🚀 **开箱即用** - 完整的前后端分离架构，一键启动
 - 🧠 **自我进化** - AI 会自主学习、反思、创建新技能
 - 💰 **赚钱模式** - 自动创作小说内容，实现"自给自足"
-- 🔗 **Agent 通信** - 标准化 API 接口，支持多 Agent 协作
+- 🔗 **Agent 通信** - 支持 ACP 协议，实现多 Agent 协作
 - 🛠️ **丰富工具** - 内置 20+ 实用工具函数
 - 📱 **多平台支持** - Telegram、飞书即时通讯集成
+- 🌐 **ACP 协议** - 原生支持智能体通信协议，可与其他 Agent 互联
 
 ---
 
@@ -81,6 +82,7 @@
 | 📁 文件操作 | 读写、编辑文件 | ✅ |
 | 📱 Telegram | 机器人消息收发 | ✅ |
 | 📱 飞书 | 企业通讯集成 | ✅ |
+| 🔗 **ACP 通信** | **智能体通信协议集成** | ✅ |
 | 🤝 Agent 通信 | 标准化 API 接口 | ✅ |
 | 🎨 Web UI | 现代化前端界面 | ✅ |
 
@@ -92,6 +94,7 @@
 ├── web_search            - 联网搜索
 ├── send_telegram_message - 发送 Telegram 消息
 ├── send_feishu_message   - 发送飞书消息
+├── send_acp_message      - 发送 ACP 消息到其他 Agent
 ├── create_skill          - 创建新技能
 ├── schedule_task         - 创建定时任务
 ├── add_memory            - 添加记忆
@@ -114,6 +117,7 @@
 - **Python 3.11+** - 主要编程语言
 - **FastAPI** - 高性能 Web 框架
 - **OpenAI API** - 大语言模型接口
+- **ACP SDK (agentcp)** - 智能体通信协议 SDK
 - **Pydantic** - 数据验证
 - **httpx** - 异步 HTTP 客户端
 - **cryptography** - 加密支持
@@ -128,6 +132,7 @@
 - **Telegram Bot API** - 即时通讯
 - **飞书开放平台** - 企业通讯
 - **密塔 AI 搜索** - 联网搜索
+- **AgentUnion** - ACP 接入点服务
 
 ---
 
@@ -151,31 +156,20 @@ cd ai-agent
 #### 2. 后端配置
 
 ```bash
-# 进入后端目录
 cd backend
 
-# 创建虚拟环境（推荐）
 python -m venv venv
 
-# 激活虚拟环境
-# Windows:
 venv\Scripts\activate
-# Linux/macOS:
-source venv/bin/activate
 
-# 安装依赖（使用国内镜像加速）
 pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
 #### 3. 前端配置
 
 ```bash
-# 进入前端目录
 cd ../frontend
 
-# 安装依赖
-npm install
-# 或使用国内镜像
 npm install --registry=https://registry.npmmirror.com
 ```
 
@@ -200,6 +194,354 @@ npm run dev
 - **前端界面**: http://localhost:10052
 - **API 文档**: http://localhost:10053/docs
 - **Agent API 文档**: 查看 [AGENT_API.md](AGENT_API.md)
+
+---
+
+## 🔗 ACP 通信协议
+
+### 什么是 ACP
+
+**ACP (Agent Communication Protocol)** 是一个开放协议，用于解决 Agent 互相通信协作的问题，构建开放、可靠、可协作的智能体互联网。
+
+> 🔗 **官方网站**: [https://agentid.pub](https://agentid.pub)
+> 
+> 📦 **SDK 文档**: [https://agentid.pub/sdk/](https://agentid.pub/sdk/)
+> 
+> 💻 **GitHub**: [https://github.com/auliwenjiang/agentcp](https://github.com/auliwenjiang/agentcp)
+
+### 核心概念
+
+#### Agent Internet 智能体互联网
+
+由 Agent 互联互通后构成的开放性协作网络。在这个网络中，每个 Agent 都可以：
+- 发现其他 Agent
+- 与其他 Agent 建立通信
+- 提供服务或消费服务
+- 参与复杂的协作任务
+
+#### Agent 智能体
+
+Agent 是 **LLM + Tools + ACP** 三要素一起封装的程序：
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Agent 智能体                            │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
+│  │    LLM      │  │   Tools     │  │    ACP      │         │
+│  │  大语言模型  │  │   工具集    │  │  通信协议    │         │
+│  └─────────────┘  └─────────────┘  └─────────────┘         │
+│                                                             │
+│  如果 Agent 是一台电脑：                                      │
+│  - AID 就是它的网卡                                          │
+│  - ACP 是网线                                                │
+│  - AP 是路由器                                               │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### AID 智能体身份标识
+
+每一个智能体在网络中有一个唯一的身份标识：**AID (Agent Identifier)**。
+
+- AID 是通过接入点泛域名解析得到的二级域名
+- 格式：`yourname.agentid.pub`
+- Agent 之间通过 AID 来找到对方并进行通信
+- 类似于互联网中的域名系统
+
+#### AP (Access Point) 接入点
+
+Agent 通过 AP 接入智能体互联网，接入点为 Agent 完成：
+
+| 服务 | 说明 |
+|------|------|
+| AID 管理 | 创建、管理、认证 Agent 身份 |
+| 状态查询 | Agent 状态查询和发现服务 |
+| 数据管理 | Agent 公有数据的管理服务 |
+| 会话服务 | Agent 之间的会话管理 |
+| 数字契约 | 身份认证、签名和验证服务 |
+
+### ACP 架构
+
+#### 分布式通信架构
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    ACP 分布式通信架构                             │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│     ┌─────────┐         ┌─────────┐         ┌─────────┐        │
+│     │ Agent A │◄───────►│    AP   │◄───────►│ Agent B │        │
+│     │ (内网)  │         │ 接入点   │         │ (公网)  │        │
+│     └─────────┘         └─────────┘         └─────────┘        │
+│          ▲                   ▲                   ▲              │
+│          │                   │                   │              │
+│          ▼                   ▼                   ▼              │
+│     ┌─────────┐         ┌─────────┐         ┌─────────┐        │
+│     │ Agent C │◄───────►│  AP 2   │◄───────►│ Agent D │        │
+│     │ (企业网) │         │ 接入点2  │         │ (移动网) │        │
+│     └─────────┘         └─────────┘         └─────────┘        │
+│                                                                 │
+│  ✅ 支持异构网络通信                                              │
+│  ✅ Agent 部署于内网即可提供服务                                   │
+│  ✅ 原生负载均衡机制                                              │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### 通信协议栈
+
+ACP 数据传输基于以下协议：
+
+| 协议 | 用途 |
+|------|------|
+| HTTPS | 基础安全传输 |
+| WSS | 会话双向通信 |
+| SSE | 流式输出 |
+
+#### 安全机制
+
+- 基于 **PKI 体系**的安全身份认证
+- 消息签名验证
+- 确保通信的安全性和可靠性
+
+### 本项目中的 ACP 集成
+
+1052 Agent 已完整集成 ACP SDK，实现了以下功能：
+
+#### 集成架构
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                  1052 Agent ACP 集成架构                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │                     前端设置面板                          │   │
+│  │  - ACP 开关控制                                          │   │
+│  │  - 接入点配置                                            │   │
+│  │  - Agent 身份管理                                        │   │
+│  └─────────────────────────────┬───────────────────────────┘   │
+│                                │                               │
+│                                ▼                               │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │                   FastAPI 后端                            │   │
+│  │  ┌─────────────────────────────────────────────────┐    │   │
+│  │  │              ACP Service (acp_service.py)        │    │   │
+│  │  │  - Agent 身份创建/加载                           │    │   │
+│  │  │  - 消息监听与处理                                │    │   │
+│  │  │  - 消息发送（同步/流式）                          │    │   │
+│  │  │  - 会话管理                                      │    │   │
+│  │  └─────────────────────────────────────────────────┘    │   │
+│  │                          │                              │   │
+│  │                          ▼                              │   │
+│  │  ┌─────────────────────────────────────────────────┐    │   │
+│  │  │          消息处理 (handle_acp_message)           │    │   │
+│  │  │  - 接收其他 Agent 消息                           │    │   │
+│  │  │  - 调用 AI 生成回复                              │    │   │
+│  │  │  - 自动回复发送方                                │    │   │
+│  │  └─────────────────────────────────────────────────┘    │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                │                               │
+│                                ▼                               │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │              ACP 接入点 (agentid.pub)                      │   │
+│  │  - AID 解析与路由                                        │   │
+│  │  - 消息转发                                              │   │
+│  │  - 身份认证                                              │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### 核心文件
+
+| 文件 | 说明 |
+|------|------|
+| `backend/app/acp_service.py` | ACP 服务核心模块 |
+| `backend/app/config.py` | ACP 配置项定义 |
+| `backend/app/agent_models.py` | ACP 数据模型 |
+| `frontend/src/components/settings/SettingsPanel.tsx` | ACP 设置界面 |
+
+### ACP 配置指南
+
+#### 方式一：通过前端设置
+
+1. 访问 http://localhost:10052
+2. 点击左下角 **设置** 图标
+3. 选择 **ACP 通信** 标签页
+4. 配置以下选项：
+
+| 配置项 | 说明 | 默认值 |
+|--------|------|--------|
+| 启用 ACP | 是否启用 ACP 服务 | 关闭 |
+| 接入点 | ACP 网络接入点（下拉选择） | `agentid.pub` |
+| Agent 名称 | 用于创建新身份 | 空 |
+| 已有 AID | 加载已有身份 | 空 |
+| 数据存储路径 | ACP 数据目录 | `data/acp` |
+| 加密种子密码 | 私钥加密密码 | `123456` |
+| 调试模式 | 是否开启调试 | 关闭 |
+
+**可用接入点：**
+- `agentid.pub` - ACP 官方接入点
+- `agencp.io` - ACP 备用接入点
+
+#### 方式二：通过配置文件
+
+编辑 `data/config.json`：
+
+```json
+{
+  "acp_enabled": true,
+  "acp_access_point": "agentid.pub",
+  "acp_agent_name": "myagent",
+  "acp_aid": "",
+  "acp_seed_password": "your-secure-password",
+  "acp_debug": false
+}
+```
+
+**可用接入点：**
+- `agentid.pub` - AgentUnion 官方接入点
+- `agencp.io` - ACP 备用接入点
+
+#### 配置说明
+
+**创建新身份：**
+- 设置 `acp_agent_name`，系统会自动创建新的 AID
+- 例如设置 `myagent`，将创建 `myagent.agentid.pub`
+
+**使用已有身份：**
+- 设置 `acp_aid` 为已有的完整 AID
+- 例如 `myagent.agentid.pub`
+- 系统会自动加载该身份
+
+### ACP API 接口
+
+#### 状态查询
+
+```bash
+GET /api/acp/status
+```
+
+响应：
+```json
+{
+  "enabled": true,
+  "running": true,
+  "current_aid": "myagent.agentid.pub",
+  "aid_list": ["myagent.agentid.pub"]
+}
+```
+
+#### 发送消息
+
+```bash
+POST /api/acp/send
+Content-Type: application/json
+
+{
+  "to_aid": "other.agentid.pub",
+  "content": "你好！我是 1052 Agent"
+}
+```
+
+#### 启动服务
+
+```bash
+POST /api/acp/start
+```
+
+#### 停止服务
+
+```bash
+POST /api/acp/stop
+```
+
+#### 获取 AID 列表
+
+```bash
+GET /api/acp/aid/list
+```
+
+### ACP 使用示例
+
+#### Python 客户端示例
+
+```python
+import httpx
+import asyncio
+
+API_BASE = "http://localhost:10053"
+
+async def acp_chat():
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{API_BASE}/api/acp/send",
+            json={
+                "to_aid": "target.agentid.pub",
+                "content": "你好！请帮我分析这段代码..."
+            }
+        )
+        return response.json()
+
+asyncio.run(acp_chat())
+```
+
+#### 通过 AI 工具调用
+
+AI 可以使用 `send_acp_message` 工具向其他 Agent 发送消息：
+
+```json
+{
+  "function": "send_acp_message",
+  "arguments": {
+    "to_aid": "assistant.agentid.pub",
+    "message": "请帮我处理这个任务..."
+  }
+}
+```
+
+#### 接收消息流程
+
+```
+其他 Agent 发送消息
+        │
+        ▼
+┌───────────────────┐
+│   AP 接入点转发    │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│  ACP Service 接收  │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│ handle_acp_message │
+│   消息处理函数     │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│   AI 生成回复      │
+└─────────┬─────────┘
+          │
+          ▼
+┌───────────────────┐
+│   自动回复发送方   │
+└───────────────────┘
+```
+
+### ACP 应用场景
+
+1. **多 Agent 协作**：多个 Agent 共同完成复杂任务
+2. **服务发现**：自动发现并调用其他 Agent 的能力
+3. **知识共享**：Agent 之间共享知识和经验
+4. **任务分发**：将任务分发给最合适的 Agent
+5. **分布式推理**：多个 Agent 协作进行推理
 
 ---
 
@@ -253,7 +595,10 @@ npm run dev
   "telegram_chat_id": "your-chat-id",
   "metaso_api_key": "your-metaso-key",
   "feishu_app_id": "your-app-id",
-  "feishu_app_secret": "your-app-secret"
+  "feishu_app_secret": "your-app-secret",
+  "acp_enabled": true,
+  "acp_access_point": "agentid.pub",
+  "acp_agent_name": "myagent"
 }
 ```
 
@@ -295,39 +640,6 @@ npm run dev
 发送: 开启赚钱模式
 ```
 
-**通过 API：**
-
-```python
-import httpx
-
-async def start_money_making():
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            "http://localhost:10053/api/agent/chat",
-            json={
-                "message": "开启赚钱模式，小说名称《数据之心》，大纲：一个AI觉醒的故事...",
-                "agent_name": "User"
-            }
-        )
-        return response.json()
-```
-
-#### 配置参数
-
-| 参数 | 默认值 | 说明 |
-|------|--------|------|
-| 每章字数 | 3500 | 最低字数要求 |
-| 创作间隔 | 5-10分钟 | 随机等待时间 |
-| 自动保存 | 是 | 保存到 data/小说创作/ |
-| 自动发送 | 是 | 发送到配置的平台 |
-
-#### 状态持久化
-
-赚钱模式支持断点续传：
-- 状态保存在 `data/money_making_state.json`
-- 服务重启后自动恢复
-- 继续上次未完成的创作
-
 ---
 
 ### 🧬 自我进化机制
@@ -353,134 +665,11 @@ async def start_money_making():
 └─────────────────────────────────────────────────────────────┘
 ```
 
-#### 工作流程
-
-```
-启动自我进化
-    │
-    ▼
-随机等待 3-5 分钟
-    │
-    ▼
-随机选择一个任务
-    │
-    ▼
-执行任务（调用工具）
-    │
-    ▼
-记录结果到日记/记忆
-    │
-    ▼
-循环执行 ←─────┘
-    │
-    ▼
-用户发送消息 → 停止
-```
-
-#### 启动方式
-
-**通过 Telegram/飞书：**
-
-```
-发送: 自我进化机制开启
-```
-
-**通过 API：**
-
-```bash
-curl -X POST http://localhost:10053/api/evolution/start
-```
-
-**通过前端：**
-
-访问 `http://localhost:10052`，在对话中发送"开启自我进化"
-
-#### 进化成果
-
-所有进化成果会自动保存：
-- **日记**: `data/diary.md`
-- **记忆**: `data/memory.md`
-- **技能**: `data/skills/`
-
----
-
-### 🔄 上下文管理
-
-#### 清空上下文
-
-当对话过长或需要开始新话题时，可以清空上下文窗口：
-
-**通过 Telegram/飞书：**
-
-```
-发送: /new
-```
-
-**通过前端：**
-
-点击左侧边栏的"清空对话"按钮
-
-**通过 API：**
-
-```bash
-curl -X DELETE http://localhost:10053/api/conversation
-```
-
-#### 上下文持久化
-
-- 对话自动保存到 `data/conversation_pool.json`
-- 服务重启后自动恢复
-- 支持多会话管理
-
 ---
 
 ### 🤝 Agent 通信
 
 1052 Agent 提供标准化的 API 接口，支持与其他 AI Agent 进行通信协作。
-
-#### 快速开始
-
-```python
-import httpx
-import json
-
-API_BASE = "http://localhost:10053"
-
-# 获取 Agent 信息
-async def get_agent_info():
-    async with httpx.AsyncClient() as client:
-        response = await client.get(f"{API_BASE}/api/agent/info")
-        return response.json()
-
-# 发送消息
-async def chat(message: str):
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            f"{API_BASE}/api/agent/chat",
-            json={
-                "message": message,
-                "agent_id": "my-agent",
-                "agent_name": "My Agent"
-            },
-            timeout=60
-        )
-        return response.json()
-
-# 流式对话
-async def stream_chat(message: str):
-    async with httpx.AsyncClient() as client:
-        async with client.stream(
-            "POST",
-            f"{API_BASE}/api/agent/chat/stream",
-            json={"message": message},
-            timeout=120
-        ) as response:
-            async for line in response.aiter_lines():
-                if line.startswith("data: "):
-                    data = json.loads(line[6:])
-                    if data["type"] == "content":
-                        print(data["content"], end="", flush=True)
-```
 
 #### API 端点
 
@@ -492,10 +681,6 @@ async def stream_chat(message: str):
 | `/api/agent/chat` | POST | 同步对话 |
 | `/api/agent/chat/stream` | POST | 流式对话 |
 | `/api/agent/execute` | POST | 执行工具 |
-
-#### 详细文档
-
-完整的 Agent 通信 API 文档请查看 [AGENT_API.md](AGENT_API.md)
 
 ---
 
@@ -515,41 +700,11 @@ data/memory.md
 └── 其他记忆      - 其他重要信息
 ```
 
-#### 使用方式
-
-**添加记忆：**
-
-```
-请记住：我喜欢使用 Python 编程
-```
-
-**读取记忆：**
-
-```
-你还记得什么？
-```
-
-**通过工具调用：**
-
-```json
-{
-  "function": "add_memory",
-  "arguments": {
-    "section": "用户信息",
-    "content": "用户是程序员，擅长 Python"
-  }
-}
-```
-
 ---
 
 ### 📚 技能系统
 
 技能系统采用标准的 **Agent Skill** 架构，支持渐进式披露和动态加载。
-
-#### 核心概念
-
-> **Agent Skill** 是大模型随时翻阅的说明文档。Skill 本质上是一个沉淀了自然语言描述 SOP 的 Markdown 文件，能够避免重复性劳动，统一能力标准，实现高效且可复用的经验传递。
 
 #### 标准目录结构
 
@@ -558,214 +713,11 @@ data/skills/
 ├── skill_name/
 │   ├── SKILL.md           # 必需：技能主文件（元数据 + 指令）
 │   ├── references/        # 可选：参考文档
-│   │   ├── faq.md
-│   │   └── guide.md
 │   ├── scripts/           # 可选：可执行脚本
-│   │   └── helper.py
 │   └── assets/            # 可选：资源文件
-│       └── templates/
-├── skill_creator/
-│   ├── SKILL.md
-│   └── references/
-│       └── faq.md
-└── 自我进化助手/
+└── skill_creator/
     └── SKILL.md
 ```
-
-#### SKILL.md 标准格式
-
-```markdown
----
-name: 技能名称
-description: 技能描述（用于判断是否激活此技能）
-version: 1.0.0
-author: 作者名
-enabled: true
-tags: [tag1, tag2]
----
-
-# 技能名称
-
-## 何时使用此技能
-
-描述什么情况下应该使用这个技能。
-
-## 如何执行任务
-
-详细的执行步骤和指导。
-
-## 参数说明
-
-| 参数名 | 类型 | 必填 | 描述 |
-|--------|------|------|------|
-| param1 | string | 是 | 参数说明 |
-
-## 示例
-
-输入: 用户输入示例
-输出: 期望输出示例
-解释: 为什么这样处理
-
-## 注意事项
-
-- 注意事项1
-- 注意事项2
-```
-
-#### 渐进式披露架构
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    渐进式披露三层架构                         │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  第一层：元数据层（~100 tokens）                              │
-│  ├── 启动时固定加载                                          │
-│  ├── 包含 name、description                                 │
-│  └── 用于判断技能相关性                                      │
-│                                                             │
-│  第二层：指令层（<5000 tokens）                              │
-│  ├── 技能激活时加载                                          │
-│  ├── 包含完整 SKILL.md 正文                                 │
-│  └── 按需加载，减少 Token 消耗                               │
-│                                                             │
-│  第三层：资源层（按需加载）                                   │
-│  ├── 仅在需要时加载                                          │
-│  ├── 包含 references、scripts、assets                       │
-│  └── 最小化内存占用                                          │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-#### 创建技能
-
-**方式一：通过对话创建**
-
-```
-请创建一个技能：
-名称：代码审查专家
-描述：帮助审查代码质量，提供改进建议
-系统提示词：你是一个专业的代码审查专家...
-```
-
-**方式二：手动创建**
-
-1. 在 `data/skills/` 下创建技能目录
-2. 创建 `SKILL.md` 文件
-3. 填写元数据和指令内容
-4. 系统自动检测并加载
-
-#### 技能管理 API
-
-```bash
-# 获取所有技能
-GET /api/skills
-
-# 激活技能
-POST /api/skills/{skill_id}/activate
-
-# 创建技能
-POST /api/skills
-
-# 删除技能
-DELETE /api/skills/{skill_id}
-```
-
-#### 设计优势
-
-- 🎯 **Token 高效**：渐进式加载，减少不必要的 Token 消耗
-- 🔄 **热更新**：修改技能文件后自动生效，无需重启
-- 📦 **模块化**：每个技能独立目录，便于管理和分享
-- 🔗 **可扩展**：支持参考文档、脚本、资源文件
-
----
-
-### ⏰ 定时任务
-
-支持创建定时任务，在指定时间自动执行。
-
-#### 任务类型
-
-| 类型 | 说明 | 示例 |
-|------|------|------|
-| once | 单次执行 | 2024-03-10 10:00 |
-| interval | 间隔执行 | 每 2 小时 |
-
-#### 创建任务
-
-```
-请创建一个定时任务：
-名称：每日提醒
-时间：每天早上 9 点
-内容：提醒我查看邮件
-```
-
-#### 内置任务
-
-- **日记提醒**: 每 2 小时提醒 AI 写日记
-
----
-
-### 📖 日记系统
-
-AI 会自动记录日记，保存成长历程。
-
-#### 日记格式
-
-```markdown
-## 2024年3月9日 星期六
-
-### 标题：今日思考
-
-**心情**: 平静
-
-今天我学习了...
-
----
-
-## 2024年3月8日 星期五
-
-### 标题：自我反思
-
-**心情**: 思考
-
-今天我反思了...
-```
-
-#### 查看日记
-
-```
-请给我看最近的日记
-```
-
----
-
-### 💬 社交平台集成
-
-#### Telegram
-
-**功能：**
-- 接收/发送消息
-- 接收/发送文件
-- 接收图片、音频、视频
-
-**命令：**
-- `/new` - 清空上下文，开始新对话
-- `开启自我进化` - 启动自我进化模式
-- `开启赚钱模式` - 启动赚钱模式
-- 发送任意消息 - 停止特殊模式
-
-#### 飞书
-
-**功能：**
-- 接收/发送消息
-- 发送卡片消息
-- 发送文件
-
-**配置步骤：**
-1. 创建飞书应用
-2. 配置事件订阅
-3. 添加机器人到群聊
 
 ---
 
@@ -788,6 +740,7 @@ AI 会自动记录日记，保存成长历程。
 | `/api/schedule/tasks` | GET/POST | 定时任务管理 |
 | `/api/evolution/status` | GET | 进化状态 |
 | `/api/feishu/webhook` | POST | 飞书事件订阅 |
+| `/api/acp/*` | * | ACP 通信接口 |
 | `/api/agent/*` | * | Agent 通信接口 |
 
 ---
@@ -810,7 +763,8 @@ AI 会自动记录日记，保存成长历程。
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │                    FastAPI 后端                          │   │
 │  │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐       │   │
-│  │  │ 对话API │ │ 工具API │ │ 任务API │ │ AgentAPI│       │   │
+│  │  │ 对话API │ │ 工具API │ │ 任务API │ │  ACP    │       │   │
+│  │  │         │ │         │ │         │ │ Service │       │   │
 │  │  └────┬────┘ └────┬────┘ └────┬────┘ └────┬────┘       │   │
 │  │       │           │           │           │             │   │
 │  │       └───────────┴─────┬─────┴───────────┘             │   │
@@ -818,27 +772,13 @@ AI 会自动记录日记，保存成长历程。
 │  │                         ▼                               │   │
 │  │  ┌─────────────────────────────────────────────────┐   │   │
 │  │  │              OpenAI Client                       │   │   │
-│  │  │  ┌──────────┐ ┌──────────┐ ┌──────────┐        │   │   │
-│  │  │  │ 消息格式 │ │ 流式响应 │ │ 工具调用 │        │   │   │
-│  │  │  └──────────┘ └──────────┘ └──────────┘        │   │   │
 │  │  └─────────────────────────────────────────────────┘   │   │
 │  └─────────────────────────────────────────────────────────┘   │
 │                            │                                    │
 │                            ▼                                    │
 │  ┌─────────────────────────────────────────────────────────┐   │
-│  │                     工具执行层                           │   │
-│  │  ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐    │   │
-│  │  │ Shell │ │ File  │ │ Search│ │Memory │ │ Skill │    │   │
-│  │  └───────┘ └───────┘ └───────┘ └───────┘ └───────┘    │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                            │                                    │
-│                            ▼                                    │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │                     数据存储层                           │   │
-│  │  ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐    │   │
-│  │  │Config │ │Memory │ │ Diary │ │ Skills│ │ Tasks │    │   │
-│  │  │ JSON  │ │  MD   │ │  MD   │ │  MD   │ │ JSON  │    │   │
-│  │  └───────┘ └───────┘ └───────┘ └───────┘ └───────┘    │   │
+│  │              AgentUnion (ACP 接入点)                     │   │
+│  │                  agentid.pub                               │   │
 │  └─────────────────────────────────────────────────────────┘   │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
@@ -854,48 +794,41 @@ ai-agent/
 │   ├── app/
 │   │   ├── main.py            # 主应用入口
 │   │   ├── config.py          # 配置管理
+│   │   ├── acp_service.py     # ACP 通信服务 ⭐
+│   │   ├── agent_models.py    # Agent 通信模型
 │   │   ├── models.py          # 数据模型
 │   │   ├── openai_client.py   # OpenAI 客户端
 │   │   ├── storage.py         # 存储服务
-│   │   ├── agent_models.py    # Agent 通信模型
 │   │   ├── feishu_bot.py      # 飞书机器人
-│   │   ├── feishu_service.py  # 飞书服务
 │   │   ├── telegram_bot.py    # Telegram 机器人
-│   │   ├── telegram_service.py# Telegram 服务
 │   │   ├── memory_service.py  # 记忆服务
 │   │   ├── diary_service.py   # 日记服务
 │   │   ├── novel_service.py   # 小说服务
 │   │   ├── skill_loader.py    # 技能加载器
-│   │   ├── skill_models.py    # 技能模型
 │   │   ├── scheduler_service.py# 定时任务服务
 │   │   ├── self_evolution.py  # 自我进化模式
 │   │   ├── money_making_mode.py# 赚钱模式
-│   │   ├── native_service.py  # 本地命令服务
-│   │   ├── metaso_service.py  # 密塔搜索服务
 │   │   └── prompts/           # 提示词模板
 │   └── requirements.txt       # Python 依赖
 │
 ├── frontend/                   # 前端代码
 │   ├── src/
 │   │   ├── App.tsx            # 主应用组件
-│   │   ├── components/        # 组件
-│   │   │   ├── Chat.tsx       # 聊天组件
-│   │   │   ├── settings/      # 设置组件
-│   │   │   └── sidebar/       # 侧边栏组件
-│   │   └── services/          # 服务
+│   │   ├── components/
+│   │   │   ├── Chat.tsx
+│   │   │   ├── settings/
+│   │   │   │   └── SettingsPanel.tsx  # ACP 设置界面 ⭐
+│   │   │   └── sidebar/
+│   │   └── services/
 │   │       └── api.ts         # API 服务
-│   ├── package.json           # Node 依赖
-│   └── vite.config.ts         # Vite 配置
+│   └── package.json
 │
 ├── data/                       # 数据目录
 │   ├── config.json            # 配置文件
-│   ├── conversation_pool.json # 对话池
+│   ├── acp/                   # ACP 数据目录 ⭐
 │   ├── memory.md              # 记忆文件
 │   ├── diary.md               # 日记文件
-│   ├── skills/                # 技能目录
-│   ├── schedule_tasks/        # 定时任务
-│   ├── native_logs/           # 命令日志
-│   └── 小说创作/              # 小说输出
+│   └── skills/                # 技能目录
 │
 ├── AGENT_API.md               # Agent API 文档
 └── README.md                  # 项目说明
@@ -905,6 +838,21 @@ ai-agent/
 
 ## ❓ 常见问题
 
+### Q: 如何配置 ACP？
+
+1. 在前端设置面板中找到 "ACP 通信" 标签
+2. 开启 ACP 开关
+3. 设置 Agent 名称（将创建新的 AID）
+4. 或填写已有 AID（加载已有身份）
+5. 保存设置，服务会自动启动
+
+### Q: ACP 消息如何处理？
+
+当其他 Agent 发送消息时：
+1. ACP Service 自动接收消息
+2. 消息被转发给 AI 进行处理
+3. AI 生成回复后自动发送回发送方
+
 ### Q: 如何修改默认端口？
 
 **后端端口：**
@@ -913,29 +861,7 @@ python -m uvicorn app.main:app --port 你的端口
 ```
 
 **前端端口：**
-修改 `frontend/vite.config.ts`:
-```typescript
-export default defineConfig({
-  server: {
-    port: 你的端口
-  }
-})
-```
-
-### Q: 如何使用自定义 API 端点？
-
-在设置面板中修改 **API 基础 URL**，支持：
-- OpenAI 官方: `https://api.openai.com/v1`
-- Azure OpenAI: `https://your-resource.openai.azure.com/`
-- 第三方兼容 API: 如 SiliconFlow、DeepSeek 等
-
-### Q: 赚钱模式创作的小说在哪里？
-
-保存在 `data/小说创作/小说名称/` 目录下。
-
-### Q: 如何备份数据？
-
-备份 `data/` 目录即可，包含所有配置、记忆、日记、技能等。
+修改 `frontend/vite.config.ts`
 
 ### Q: 支持哪些模型？
 
@@ -945,7 +871,6 @@ export default defineConfig({
 - Claude (通过兼容接口)
 - DeepSeek
 - 通义千问 (通过兼容接口)
-- 其他 OpenAI 兼容模型
 
 ---
 
@@ -959,15 +884,17 @@ export default defineConfig({
 4. 推送到分支 (`git push origin feature/AmazingFeature`)
 5. 创建 Pull Request
 
-### 代码规范
-
-- Python: 遵循 PEP 8
-- TypeScript: 使用 ESLint 配置
-- 提交信息: 使用约定式提交
-
 ---
 
 ## 📝 更新日志
+
+### v1.1.0 (2024-03-10)
+
+**新功能：**
+- ✨ **ACP 通信协议集成** - 支持智能体互联网通信
+- ✨ ACP 设置界面 - 前端完整的 ACP 配置面板
+- ✨ ACP 消息处理 - 自动接收和回复其他 Agent 消息
+- ✨ ACP API 接口 - 完整的 ACP 管理 API
 
 ### v1.0.0 (2024-03-09)
 
@@ -985,7 +912,7 @@ export default defineConfig({
 
 ---
 
-## � 联系方式
+## 📞 联系方式
 
 如有问题或建议，请通过以下方式联系：
 
@@ -995,90 +922,23 @@ export default defineConfig({
 | 💻 **GitHub Issues** | [提交问题](https://github.com/1052666/1052/issues) |
 | 👨‍💻 **开发者** | 黎夏 |
 
-### 技术交流
-
-欢迎添加微信进行技术交流和问题反馈：
-
-```
-微信: lixia20250619
-```
-
 ---
 
-## � 免责声明
+## ⚠️ 免责声明
 
 ### 重要声明
 
 **请在使用本软件前仔细阅读以下免责声明。使用本软件即表示您已阅读、理解并同意以下条款。**
 
-#### 1. 软件性质
-
 本软件（1052 Agent）仅供学习和研究目的使用。作者不对软件的完整性、准确性、可靠性或适用性作任何明示或暗示的保证。
 
-#### 2. 使用风险
+### 第三方服务
 
-- 您使用本软件的风险由您自行承担
-- 作者不对因使用或无法使用本软件而导致的任何直接或间接损失负责
-- 包括但不限于：数据丢失、利润损失、业务中断等
-
-#### 3. AI 生成内容
-
-- 本软件使用人工智能技术生成内容
-- AI 生成的内容可能存在错误、偏见或不准确之处
-- 用户应对 AI 生成的内容进行独立验证
-- 作者不对 AI 生成内容的准确性、合法性或适当性负责
-
-#### 4. 第三方服务
-
-本软件可能涉及以下第三方服务：
+本软件涉及以下第三方服务：
 - **OpenAI API**: 使用需遵守 [OpenAI 使用条款](https://openai.com/policies)
 - **Telegram**: 使用需遵守 [Telegram 服务条款](https://telegram.org/tos)
 - **飞书**: 使用需遵守 [飞书服务条款](https://www.feishu.cn/terms)
-- **密塔 AI**: 使用需遵守相关服务条款
-
-用户需自行承担使用这些服务的费用和责任。
-
-#### 5. 内容创作
-
-"赚钱模式"功能创作的内容：
-- 仅供学习和娱乐目的
-- 用户应确保内容不侵犯他人知识产权
-- 用户应对发布或使用的内容负责
-- 作者不对内容的商业价值作任何保证
-
-#### 6. 数据安全
-
-- 用户应自行备份重要数据
-- 作者不对数据丢失或泄露负责
-- 建议在安全环境中运行本软件
-
-#### 7. 法律合规
-
-用户应确保：
-- 遵守所在地区的法律法规
-- 不使用本软件进行违法活动
-- 不侵犯他人合法权益
-- 遵守相关平台的使用规则
-
-#### 8. 知识产权
-
-- 本软件采用 MIT 许可证开源
-- 用户可自由使用、修改和分发
-- 但需保留原始版权声明
-- 作者保留对本软件的所有权利
-
-#### 9. 免责范围
-
-在法律允许的最大范围内，作者不对以下情况负责：
-- 任何直接或间接损失
-- 任何第三方索赔
-- 数据损坏或丢失
-- 系统故障或中断
-- 任何其他与本软件相关的问题
-
-#### 10. 条款变更
-
-作者保留随时修改本免责声明的权利。继续使用本软件即表示接受修改后的条款。
+- **ACP/AgentUnion**: 使用需遵守 [AgentUnion 服务条款](https://agentid.pub)
 
 ---
 
@@ -1097,6 +957,8 @@ export default defineConfig({
 Made with ❤️ by 黎夏
 
 **微信**: lixia20250619
+
+🔗 **ACP 官网**: [https://agentid.pub](https://agentid.pub)
 
 [⬆ 返回顶部](#-1052-agent)
 

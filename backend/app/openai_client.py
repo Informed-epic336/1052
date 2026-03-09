@@ -129,7 +129,7 @@ NATIVE_TOOLS = [
         "type": "function",
         "function": {
             "name": "send_telegram_message",
-            "description": "Send a message to Telegram. Use this to send text messages to a configured Telegram chat. Supports HTML formatting. IMPORTANT: After successfully sending, do NOT output any confirmation message to the current user - the message has already been delivered to Telegram.",
+            "description": "Send a message to Telegram proactively. IMPORTANT: Do NOT use this tool when you are already in a Telegram conversation - just respond with text directly and the system will send it automatically. Only use this tool when you need to send a message OUTSIDE of an active conversation (e.g., from scheduled tasks, self-evolution mode, or other background processes). After successfully sending, do NOT output any confirmation message.",
             "parameters": {
                 "type": "object",
                 "properties": {

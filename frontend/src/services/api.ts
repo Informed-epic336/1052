@@ -30,6 +30,13 @@ export interface Settings {
   feishu_encrypt_key: string;
   feishu_verification_token: string;
   feishu_chat_id: string;
+  acp_enabled: boolean;
+  acp_data_path: string;
+  acp_seed_password: string;
+  acp_access_point: string;
+  acp_agent_name: string;
+  acp_aid: string;
+  acp_debug: boolean;
 }
 
 export interface StreamCallbacks {

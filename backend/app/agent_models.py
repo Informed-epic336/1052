@@ -57,3 +57,27 @@ class AgentHeartbeat(BaseModel):
     timestamp: int
     current_tasks: int
     uptime_seconds: int
+
+class ACPSettingsUpdate(BaseModel):
+    acp_enabled: Optional[bool] = None
+    acp_data_path: Optional[str] = None
+    acp_seed_password: Optional[str] = None
+    acp_access_point: Optional[str] = None
+    acp_agent_name: Optional[str] = None
+    acp_aid: Optional[str] = None
+    acp_debug: Optional[bool] = None
+
+class ACPMessageRequest(BaseModel):
+    to_aid: str
+    content: str
+
+class ACPMessageResponse(BaseModel):
+    success: bool
+    message: Optional[str] = None
+    error: Optional[str] = None
+
+class ACPStatusResponse(BaseModel):
+    enabled: bool
+    running: bool
+    current_aid: Optional[str] = None
+    aid_list: List[str] = []

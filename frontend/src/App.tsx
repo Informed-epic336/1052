@@ -27,6 +27,13 @@ interface LocalSettings {
   feishuEncryptKey: string;
   feishuVerificationToken: string;
   feishuChatId: string;
+  acpEnabled: boolean;
+  acpDataPath: string;
+  acpSeedPassword: string;
+  acpAccessPoint: string;
+  acpAgentName: string;
+  acpAid: string;
+  acpDebug: boolean;
 }
 
 const defaultSettings: LocalSettings = {
@@ -52,6 +59,13 @@ const defaultSettings: LocalSettings = {
   feishuEncryptKey: '',
   feishuVerificationToken: '',
   feishuChatId: '',
+  acpEnabled: false,
+  acpDataPath: '',
+  acpSeedPassword: '123456',
+  acpAccessPoint: 'agentid.pub',
+  acpAgentName: '',
+  acpAid: '',
+  acpDebug: false,
 };
 
 function App() {
@@ -95,6 +109,13 @@ function App() {
         feishuEncryptKey: apiSettings.feishu_encrypt_key || '',
         feishuVerificationToken: apiSettings.feishu_verification_token || '',
         feishuChatId: apiSettings.feishu_chat_id || '',
+        acpEnabled: apiSettings.acp_enabled || false,
+        acpDataPath: apiSettings.acp_data_path || '',
+        acpSeedPassword: apiSettings.acp_seed_password || '123456',
+        acpAccessPoint: apiSettings.acp_access_point || 'agentunion.cn',
+        acpAgentName: apiSettings.acp_agent_name || '',
+        acpAid: apiSettings.acp_aid || '',
+        acpDebug: apiSettings.acp_debug || false,
       }));
     } catch (error) {
       console.error('Failed to load settings:', error);
@@ -193,6 +214,13 @@ function App() {
         feishu_encrypt_key: newSettings.feishuEncryptKey,
         feishu_verification_token: newSettings.feishuVerificationToken,
         feishu_chat_id: newSettings.feishuChatId,
+        acp_enabled: newSettings.acpEnabled,
+        acp_data_path: newSettings.acpDataPath,
+        acp_seed_password: newSettings.acpSeedPassword,
+        acp_access_point: newSettings.acpAccessPoint,
+        acp_agent_name: newSettings.acpAgentName,
+        acp_aid: newSettings.acpAid,
+        acp_debug: newSettings.acpDebug,
       });
       setSettings(newSettings);
       setIsSettingsOpen(false);

@@ -25,6 +25,13 @@ class Settings(BaseSettings):
     feishu_encrypt_key: str = ""
     feishu_verification_token: str = ""
     feishu_chat_id: str = ""
+    acp_enabled: bool = False
+    acp_data_path: str = ""
+    acp_seed_password: str = "123456"
+    acp_access_point: str = "agentid.pub"
+    acp_agent_name: str = ""
+    acp_aid: str = ""
+    acp_debug: bool = False
 
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), "..", "..", "data", "config.json")
 

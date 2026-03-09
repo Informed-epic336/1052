@@ -12,6 +12,20 @@ logger = logging.getLogger(__name__)
 
 FILES_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "1052")
 
+def get_proxy_url() -> Optional[str]:
+    http_proxy = os.environ.get("HTTP_PROXY") or os.environ.get("http_proxy")
+    https_proxy = os.environ.get("HTTPS_PROXY") or os.environ.get("https_proxy")
+    return https_proxy or http_proxy
+
+def create_async_client(**kwargs) -> httpx.AsyncClient:
+    if "trust_env" not in kwargs:
+        kwargs["trust_env"] = True
+    proxy_url = get_proxy_url()
+    if proxy_url:
+        kwargs["proxy"] = proxy_url
+        logger.debug(f"Using proxy: {proxy_url}")
+    return httpx.AsyncClient(**kwargs)
+
 def ensure_files_dir():
     if not os.path.exists(FILES_DIR):
         os.makedirs(FILES_DIR)
@@ -52,12 +66,14 @@ class TelegramBot:
         logger.info("Telegram bot stopped")
     
     async def _poll_loop(self):
+        logger.info("Telegram bot poll loop started")
         while self.running:
             try:
                 await self._get_updates()
             except Exception as e:
                 logger.error(f"Poll error: {e}")
             await asyncio.sleep(1)
+        logger.info("Telegram bot poll loop stopped")
     
     async def _get_updates(self):
         url = f"https://api.telegram.org/bot{self.token}/getUpdates"
@@ -67,7 +83,7 @@ class TelegramBot:
         }
         
         try:
-            async with httpx.AsyncClient() as client:
+            async with create_async_client() as client:
                 response = await client.get(url, params=params, timeout=35)
                 result = response.json()
                 
@@ -188,7 +204,7 @@ class TelegramBot:
         
         get_file_url = f"https://api.telegram.org/bot{self.token}/getFile"
         
-        async with httpx.AsyncClient() as client:
+        async with create_async_client() as client:
             response = await client.get(get_file_url, params={"file_id": file_id}, timeout=30)
             result = response.json()
             
@@ -223,7 +239,7 @@ class TelegramBot:
         url = f"https://api.telegram.org/bot{self.token}/sendMessage"
         
         try:
-            async with httpx.AsyncClient() as client:
+            async with create_async_client() as client:
                 response = await client.post(
                     url,
                     json={
@@ -245,7 +261,8 @@ class TelegramBot:
                     return {"success": False, "error": error_desc}
         
         except Exception as e:
-            logger.error(f"sendMessage exception: {e}")
+            import traceback
+            logger.error(f"sendMessage exception: {e}\n{traceback.format_exc()}")
             return {"success": False, "error": str(e)}
     
     async def send_document(self, file_path: str, caption: str = "") -> dict:
@@ -285,7 +302,7 @@ class TelegramBot:
                 'Content-Type': f'multipart/form-data; boundary={boundary}'
             }
             
-            async with httpx.AsyncClient(timeout=300) as client:
+            async with create_async_client(timeout=300) as client:
                 response = await client.post(url, content=body, headers=headers)
                 
                 result = response.json()
@@ -317,7 +334,7 @@ class TelegramBot:
             
             file_name = os.path.basename(file_path)
             
-            async with httpx.AsyncClient(timeout=300) as client:
+            async with create_async_client(timeout=300) as client:
                 files = {"photo": (file_name, file_content)}
                 data = {"chat_id": self.chat_id}
                 if caption:

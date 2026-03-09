@@ -39,8 +39,10 @@ from app.self_evolution import self_evolution_mode
 from app.money_making_mode import money_making_mode
 from app.agent_models import (
     AgentChatRequest, AgentChatResponse, AgentInfo, 
-    AgentCapability, AgentHeartbeat, AgentStreamChunk
+    AgentCapability, AgentHeartbeat, AgentStreamChunk,
+    ACPSettingsUpdate, ACPMessageRequest, ACPMessageResponse, ACPStatusResponse
 )
+from app.acp_service import acp_service, ACPConfig
 
 logger = logging.getLogger(__name__)
 
@@ -371,8 +373,68 @@ async def tool_executor(function_name: str, arguments: Dict[str, Any]) -> str:
         money_making_mode.stop()
         return json.dumps({"success": True, "message": "赚钱模式已停止"}, ensure_ascii=False)
     
+    elif function_name == "send_acp_message":
+        to_aid = arguments.get("to_aid", "")
+        message_content = arguments.get("message", "")
+        
+        if not to_aid or not message_content:
+            return json.dumps({"error": "to_aid and message are required"}, ensure_ascii=False)
+        
+        if not acp_service.is_running():
+            return json.dumps({"error": "ACP service is not running"}, ensure_ascii=False)
+        
+        success = await acp_service.send_message(to_aid, message_content)
+        if success:
+            return json.dumps({"success": True, "message": f"Message sent to {to_aid}"}, ensure_ascii=False)
+        else:
+            return json.dumps({"error": "Failed to send ACP message"}, ensure_ascii=False)
+    
     else:
         return json.dumps({"error": f"Unknown function: {function_name}"})
+
+
+async def handle_acp_message(msg: dict):
+    try:
+        logger.info(f"Received ACP message from {msg.get('sender')}: {msg.get('content')[:50]}...")
+        
+        content = msg.get("content", "")
+        sender = msg.get("sender", "")
+        raw_msg = msg.get("raw_message")
+        
+        conversation = get_or_create_conversation()
+        current_time = int(time.time() * 1000)
+        
+        user_message = Message(
+            role="user",
+            content=f"[ACP - {sender}] {content}",
+            timestamp=current_time
+        )
+        conversation.messages.append(user_message)
+        
+        api_messages = format_messages_for_api(conversation.messages)
+        
+        full_reply = ""
+        async for event in stream_openai_api(api_messages, tool_executor=tool_executor):
+            if event["type"] == "content":
+                full_reply += event["content"]
+        
+        if full_reply:
+            assistant_message = Message(
+                role="assistant",
+                content=full_reply,
+                timestamp=int(time.time() * 1000)
+            )
+            conversation.messages.append(assistant_message)
+            conversation.updated_at = assistant_message.timestamp
+            save_conversation(conversation)
+            
+            if raw_msg and acp_service.aid:
+                acp_service.aid.reply_message(raw_msg, full_reply)
+        
+        return True
+    except Exception as e:
+        logger.error(f"Error handling ACP message: {e}")
+        return True
 
 
 async def handle_telegram_message(text: str, user_name: str):
@@ -427,9 +489,17 @@ async def handle_telegram_message(text: str, user_name: str):
         api_messages = format_messages_for_api(conversation.messages)
         
         full_reply = ""
+        silent_mode = False
         async for event in stream_openai_api(api_messages, tool_executor=tool_executor):
             if event["type"] == "content":
                 full_reply += event["content"]
+            elif event["type"] == "tool_result":
+                try:
+                    result_data = json.loads(event["result"])
+                    if result_data.get("silent"):
+                        silent_mode = True
+                except:
+                    pass
         
         if full_reply:
             assistant_message = Message(
@@ -440,7 +510,8 @@ async def handle_telegram_message(text: str, user_name: str):
             conversation.messages.append(assistant_message)
             conversation.updated_at = assistant_message.timestamp
             save_conversation(conversation)
-            await telegram_bot.send_message(full_reply)
+            if not silent_mode:
+                await telegram_bot.send_message(full_reply)
     except Exception as e:
         logger.error(f"Error handling telegram message: {e}")
         await telegram_bot.send_message(f"抱歉，处理消息时出错: {str(e)}")
@@ -505,9 +576,17 @@ async def handle_feishu_message(text: str, user_name: str, chat_id: str = None):
         api_messages = format_messages_for_api(conversation.messages)
         
         full_reply = ""
+        silent_mode = False
         async for event in stream_openai_api(api_messages, tool_executor=tool_executor):
             if event["type"] == "content":
                 full_reply += event["content"]
+            elif event["type"] == "tool_result":
+                try:
+                    result_data = json.loads(event["result"])
+                    if result_data.get("silent"):
+                        silent_mode = True
+                except:
+                    pass
         
         if full_reply:
             assistant_message = Message(
@@ -519,7 +598,7 @@ async def handle_feishu_message(text: str, user_name: str, chat_id: str = None):
             conversation.updated_at = assistant_message.timestamp
             save_conversation(conversation)
             
-            if chat_id:
+            if chat_id and not silent_mode:
                 await feishu_bot.send_message(chat_id, full_reply)
     except Exception as e:
         logger.error(f"Error handling feishu message: {e}")
@@ -702,6 +781,21 @@ async def startup_event():
         )
         await feishu_bot.start()
         logger.info("Feishu bot started on startup")
+    
+    acp_config = ACPConfig(
+        acp_enabled=settings.acp_enabled,
+        acp_data_path=settings.acp_data_path,
+        acp_seed_password=settings.acp_seed_password,
+        acp_access_point=settings.acp_access_point,
+        acp_agent_name=settings.acp_agent_name,
+        acp_aid=settings.acp_aid,
+        acp_debug=settings.acp_debug
+    )
+    acp_service.configure(acp_config)
+    acp_service.set_message_handler(handle_acp_message)
+    await acp_service.start()
+    if acp_service.is_running():
+        logger.info(f"ACP service started on startup, AID: {acp_service.get_current_aid()}")
 
 
 @app.on_event("shutdown")
@@ -710,6 +804,7 @@ async def shutdown_event():
     skill_loader.stop_watching()
     telegram_bot.stop()
     feishu_bot.stop()
+    acp_service.stop()
     logger.info("Services stopped on shutdown")
 
 
@@ -736,7 +831,14 @@ async def get_settings():
         feishu_app_secret=settings.feishu_app_secret,
         feishu_encrypt_key=settings.feishu_encrypt_key,
         feishu_verification_token=settings.feishu_verification_token,
-        feishu_chat_id=settings.feishu_chat_id
+        feishu_chat_id=settings.feishu_chat_id,
+        acp_enabled=settings.acp_enabled,
+        acp_data_path=settings.acp_data_path,
+        acp_seed_password=settings.acp_seed_password,
+        acp_access_point=settings.acp_access_point,
+        acp_agent_name=settings.acp_agent_name,
+        acp_aid=settings.acp_aid,
+        acp_debug=settings.acp_debug
     )
 
 
@@ -774,6 +876,20 @@ async def update_settings(update: SettingsUpdate):
         current.feishu_verification_token = update.feishu_verification_token
     if update.feishu_chat_id is not None:
         current.feishu_chat_id = update.feishu_chat_id
+    if update.acp_enabled is not None:
+        current.acp_enabled = update.acp_enabled
+    if update.acp_data_path is not None:
+        current.acp_data_path = update.acp_data_path
+    if update.acp_seed_password is not None:
+        current.acp_seed_password = update.acp_seed_password
+    if update.acp_access_point is not None:
+        current.acp_access_point = update.acp_access_point
+    if update.acp_agent_name is not None:
+        current.acp_agent_name = update.acp_agent_name
+    if update.acp_aid is not None:
+        current.acp_aid = update.acp_aid
+    if update.acp_debug is not None:
+        current.acp_debug = update.acp_debug
     
     save_settings(current)
     
@@ -795,6 +911,24 @@ async def update_settings(update: SettingsUpdate):
             await feishu_bot.start()
             logger.info("Feishu bot started after settings update")
     
+    if current.acp_enabled and not acp_service.is_running():
+        acp_config = ACPConfig(
+            acp_enabled=current.acp_enabled,
+            acp_data_path=current.acp_data_path,
+            acp_seed_password=current.acp_seed_password,
+            acp_access_point=current.acp_access_point,
+            acp_agent_name=current.acp_agent_name,
+            acp_aid=current.acp_aid,
+            acp_debug=current.acp_debug
+        )
+        acp_service.configure(acp_config)
+        acp_service.set_message_handler(handle_acp_message)
+        await acp_service.start()
+        logger.info("ACP service started after settings update")
+    elif not current.acp_enabled and acp_service.is_running():
+        acp_service.stop()
+        logger.info("ACP service stopped after settings update")
+    
     return SettingsResponse(
         api_key=current.api_key,
         api_base_url=current.api_base_url,
@@ -810,7 +944,14 @@ async def update_settings(update: SettingsUpdate):
         feishu_app_secret=current.feishu_app_secret,
         feishu_encrypt_key=current.feishu_encrypt_key,
         feishu_verification_token=current.feishu_verification_token,
-        feishu_chat_id=current.feishu_chat_id
+        feishu_chat_id=current.feishu_chat_id,
+        acp_enabled=current.acp_enabled,
+        acp_data_path=current.acp_data_path,
+        acp_seed_password=current.acp_seed_password,
+        acp_access_point=current.acp_access_point,
+        acp_agent_name=current.acp_agent_name,
+        acp_aid=current.acp_aid,
+        acp_debug=current.acp_debug
     )
 
 
@@ -1292,3 +1433,76 @@ async def agent_execute_tool(tool_name: str, arguments: Dict[str, Any]):
             "error": str(e),
             "timestamp": int(time.time() * 1000)
         }
+
+
+@app.get("/api/acp/status", response_model=ACPStatusResponse)
+async def get_acp_status():
+    return ACPStatusResponse(
+        enabled=acp_service.is_enabled(),
+        running=acp_service.is_running(),
+        current_aid=acp_service.get_current_aid(),
+        aid_list=acp_service.get_aid_list()
+    )
+
+
+@app.post("/api/acp/send", response_model=ACPMessageResponse)
+async def send_acp_message(request: ACPMessageRequest):
+    if not acp_service.is_running():
+        return ACPMessageResponse(
+            success=False,
+            error="ACP service is not running"
+        )
+    
+    success = await acp_service.send_message(request.to_aid, request.content)
+    if success:
+        return ACPMessageResponse(
+            success=True,
+            message=f"Message sent to {request.to_aid}"
+        )
+    else:
+        return ACPMessageResponse(
+            success=False,
+            error="Failed to send message"
+        )
+
+
+@app.post("/api/acp/start")
+async def start_acp_service():
+    if acp_service.is_running():
+        return {"success": False, "message": "ACP service is already running"}
+    
+    settings = load_settings()
+    if not settings.acp_enabled:
+        return {"success": False, "message": "ACP is not enabled in settings"}
+    
+    acp_config = ACPConfig(
+        acp_enabled=settings.acp_enabled,
+        acp_data_path=settings.acp_data_path,
+        acp_seed_password=settings.acp_seed_password,
+        acp_access_point=settings.acp_access_point,
+        acp_agent_name=settings.acp_agent_name,
+        acp_aid=settings.acp_aid,
+        acp_debug=settings.acp_debug
+    )
+    acp_service.configure(acp_config)
+    acp_service.set_message_handler(handle_acp_message)
+    success = await acp_service.start()
+    
+    if success:
+        return {"success": True, "message": f"ACP service started, AID: {acp_service.get_current_aid()}"}
+    else:
+        return {"success": False, "message": "Failed to start ACP service"}
+
+
+@app.post("/api/acp/stop")
+async def stop_acp_service():
+    if not acp_service.is_running():
+        return {"success": False, "message": "ACP service is not running"}
+    
+    acp_service.stop()
+    return {"success": True, "message": "ACP service stopped"}
+
+
+@app.get("/api/acp/aid/list")
+async def get_acp_aid_list():
+    return {"aid_list": acp_service.get_aid_list()}
